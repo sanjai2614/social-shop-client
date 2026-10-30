@@ -22,7 +22,7 @@ import Cart from "../pages/Cart.jsx";
 import ProductDetails from "../pages/ProductDetails.jsx";
 import OrderConfirmation from "../pages/OrderConfirmation.jsx";
 import Checkout from "../pages/Checkout.jsx";
-import MyOrders from "../pages/Myorders.jsx";
+import MyOrders from "../pages/MyOrders.jsx";
 import Orders from "../pages/admin/Orders.jsx";
 import OrderDetails from "../pages/admin/OrderDetails.jsx";
 import Dashboard from "../pages/admin/Dashboard.jsx";
