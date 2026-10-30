@@ -1,8 +1,10 @@
-import { Navigate, Outlet } from "react-router-dom";
+
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import useAuth from "../hooks/useAuth.js";
 
 const AdminRoute = () => {
   const { user, isAuthLoading, isAuthenticated } = useAuth();
+  const location = useLocation();
 
   if (isAuthLoading) {
     return (
@@ -13,7 +15,13 @@ const AdminRoute = () => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+        to="/login"
+        state={{ from: location }}
+        replace
+      />
+    );
   }
 
   if (user?.role !== "admin") {

@@ -4,10 +4,17 @@ import {
   useContext,
   useState,
 } from "react";
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getCurrentUser } from "../services/auth.service.js";
-import { getAccessToken } from "../api/tokenHelper.js";
+import api from "../api/axios.js";
+
+import {
+  getAccessToken,
+  setAccessToken,
+  removeAccessToken,
+} from "../api/tokenHelper.js";
 
 const AuthContext = createContext(null);
 
@@ -17,8 +24,34 @@ export const AuthProvider = ({ children }) => {
   const [hasToken, setHasToken] = useState(
     () => Boolean(getAccessToken()),
   );
+
   const [localUser, setLocalUser] = useState(null);
 
+  // Restore session if access token is missing
+  const {
+    data: refreshData,
+    isPending: isRefreshing,
+    isError: isRefreshError,
+  } = useQuery({
+    queryKey: ["auth", "refresh"],
+    queryFn: async () => {
+      const { data } = await api.post("/auth/refresh");
+
+      if (!data.accessToken) {
+        throw new Error("Access token missing");
+      }
+
+      setAccessToken(data.accessToken);
+      setHasToken(true);
+
+      return data;
+    },
+    enabled: !hasToken,
+    retry: false,
+    staleTime: Infinity,
+  });
+
+  // Fetch current user after token is available
   const {
     data,
     isPending,
@@ -33,7 +66,7 @@ export const AuthProvider = ({ children }) => {
   });
 
   const user = hasToken
-    ? (data?.user ?? localUser)
+    ? data?.user ?? localUser
     : null;
 
   const setUser = (nextUser) => {
@@ -42,13 +75,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    removeAccessToken();
     setLocalUser(null);
     setHasToken(false);
-    queryClient.removeQueries({ queryKey: ["auth", "me"] });
+
+    queryClient.removeQueries({
+      queryKey: ["auth"],
+    });
   };
 
   const isAuthLoading =
-    hasToken && isPending && !localUser;
+    (!hasToken && isRefreshing) ||
+    (hasToken && isPending && !localUser);
 
   const value = {
     user,
@@ -56,7 +94,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     isAuthenticated: Boolean(user),
     isAuthLoading,
-    isAuthError: isError,
+    isAuthError: isError || isRefreshError,
     authError: error,
   };
 

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
-import { loginUser, registerUser } from "../services/auth.service.js";
+import { loginUser, registerUser, logoutUser } from "../services/auth.service.js";
 import { useAuthContext } from "../context/AuthContext.jsx";
 import { setAccessToken, removeAccessToken } from "../api/tokenHelper.js";
 
@@ -42,12 +42,18 @@ const loginMutation = useMutation({
     },
   });
 
-  const logout = () => {
+ const logout = async () => {
+  try {
+    await logoutUser();
+  } catch (error) {
+    console.error("Logout API failed:", error);
+  } finally {
     removeAccessToken();
     setUser(null);
     queryClient.clear();
     navigate("/login", { replace: true });
-  };
+  }
+};
 
   return {
     user,
